@@ -1,4 +1,8 @@
 # VASA Mission Control 🚀
+[![](https://img.shields.io/badge/PRD-roadmap-blue)](./PRD.md)
+
+## 📄 Product Roadmap & Requirements
+See [PRD.md](./PRD.md) for the current product requirements, planned features, and contribution roadmap. If you want to contribute, please review the PRD for guidance and add your suggestions!
 
 [![CI/CD Pipeline](https://github.com/your-username/vasa_bot/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/your-username/vasa_bot/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/your-username/vasa_bot/workflows/CodeQL%20Security%20Analysis/badge.svg)](https://github.com/your-username/vasa_bot/actions/workflows/codeql.yml)

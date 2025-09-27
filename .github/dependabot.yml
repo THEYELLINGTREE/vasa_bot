@@ -9,9 +9,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 10
     reviewers:
-      - "your-github-username"  # Replace with actual GitHub username
+      - "THEYELLINGTREE"  # Replace with actual GitHub username
     assignees:
-      - "your-github-username"  # Replace with actual GitHub username
+      - "THEYELLINGTREE"  # Replace with actual GitHub username
     commit-message:
       prefix: "backend"
       include: "scope"
@@ -43,9 +43,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 10
     reviewers:
-      - "your-github-username"  # Replace with actual GitHub username
+      - "THEYELLINGTREE"  # Replace with actual GitHub username
     assignees:
-      - "your-github-username"  # Replace with actual GitHub username
+      - "THEYELLINGTREE"  # Replace with actual GitHub username
     commit-message:
       prefix: "frontend"
       include: "scope"
@@ -77,9 +77,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 5
     reviewers:
-      - "your-github-username"  # Replace with actual GitHub username
+      - "THEYELLINGTREE"  # Replace with actual GitHub username
     assignees:
-      - "your-github-username"  # Replace with actual GitHub username
+      - "THEYELLINGTREE"  # Replace with actual GitHub username
     commit-message:
       prefix: "root"
       include: "scope"
@@ -96,9 +96,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 5
     reviewers:
-      - "your-github-username"  # Replace with actual GitHub username
+      - "THEYELLINGTREE"  # Replace with actual GitHub username
     assignees:
-      - "your-github-username"  # Replace with actual GitHub username
+      - "THEYELLINGTREE"  # Replace with actual GitHub username
     commit-message:
       prefix: "actions"
       include: "scope"

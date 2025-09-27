@@ -1,0 +1,23 @@
+{
+  "name": "vasa-bot-frontend",
+  "version": "1.0.0",
+  "description": "Frontend management UI for Vasa Discord Bot",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["discord", "bot", "events", "management", "react"],
+  "author": "",
+  "license": "MIT"
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.3",
+    "axios": "^1.12.2",
+    "lucide-react": "^0.544.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.3",
+    "vite": "^7.1.7"
+  }
+}

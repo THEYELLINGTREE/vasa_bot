@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import { Calendar, Users, Settings, Activity, Clock, CheckCircle } from 'lucide-react'
 import axios from 'axios'
 
-function Dashboard() {
+const Dashboard = memo(function Dashboard() {
   const [stats, setStats] = useState({
     totalEvents: 0,
     upcomingEvents: 0,
@@ -74,11 +74,11 @@ function Dashboard() {
   return (
     <div>
       <div className="mb-6">
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-          Dashboard
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+          Mission Command Center
         </h1>
         <p className="text-muted">
-          Overview of your Vasa Bot activity and performance
+          Real-time mission status and operational telemetry for VASA Bot
         </p>
       </div>
 
@@ -90,7 +90,7 @@ function Dashboard() {
               <Calendar className="text-blue-600" size={24} />
             </div>
             <div>
-              <p className="text-muted text-sm">Total Events</p>
+              <p className="text-muted text-sm">Mission Events</p>
               <p style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>{stats.totalEvents}</p>
             </div>
           </div>
@@ -102,7 +102,7 @@ function Dashboard() {
               <Clock className="text-green-600" size={24} />
             </div>
             <div>
-              <p className="text-muted text-sm">Upcoming Events</p>
+              <p className="text-muted text-sm">Scheduled Missions</p>
               <p style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>{stats.upcomingEvents}</p>
             </div>
           </div>
@@ -114,7 +114,7 @@ function Dashboard() {
               <Users className="text-yellow-600" size={24} />
             </div>
             <div>
-              <p className="text-muted text-sm">Total RSVPs</p>
+              <p className="text-muted text-sm">Crew Confirmations</p>
               <p style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>{stats.totalRSVPs}</p>
             </div>
           </div>
@@ -133,9 +133,9 @@ function Dashboard() {
               />
             </div>
             <div>
-              <p className="text-muted text-sm">Bot Status</p>
+              <p className="text-muted text-sm">System Status</p>
               <p style={{ fontSize: '1.25rem', fontWeight: 'bold', textTransform: 'capitalize' }}>
-                {stats.botStatus}
+                {stats.botStatus === 'online' ? 'Operational' : 'Offline'}
               </p>
             </div>
           </div>
@@ -146,8 +146,8 @@ function Dashboard() {
       <div className="grid grid-cols-2">
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">Recent Events</h2>
-            <p className="card-description">Latest events created in your servers</p>
+            <h2 className="card-title">Recent Mission Logs</h2>
+            <p className="card-description">Latest mission events from your space stations</p>
           </div>
           
           {recentEvents.length === 0 ? (
@@ -179,8 +179,8 @@ function Dashboard() {
 
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">Quick Actions</h2>
-            <p className="card-description">Common management tasks</p>
+            <h2 className="card-title">Mission Controls</h2>
+            <p className="card-description">Essential command operations</p>
           </div>
           
           <div className="space-y-3">
@@ -189,7 +189,7 @@ function Dashboard() {
               onClick={() => window.open('/events', '_self')}
             >
               <Calendar size={16} />
-              View All Events
+              Mission Catalog
             </button>
             
             <button 
@@ -197,7 +197,7 @@ function Dashboard() {
               onClick={() => window.open('/settings', '_self')}
             >
               <Settings size={16} />
-              Bot Settings
+              System Configuration
             </button>
             
             <button 
@@ -220,6 +220,6 @@ function Dashboard() {
       </div>
     </div>
   )
-}
+});
 
 export default Dashboard

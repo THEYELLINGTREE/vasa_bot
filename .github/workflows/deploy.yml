@@ -1,0 +1,130 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Application
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm run install:all
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Test build
+      run: |
+        cd backend
+        node --check src/index.js
+    
+    - name: Create deployment artifact
+      run: |
+        tar -czf vasa-bot-${{ github.sha }}.tar.gz \
+          backend/ \
+          frontend/dist/ \
+          package.json \
+          README.md \
+          --exclude=backend/node_modules \
+          --exclude=backend/.env
+    
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vasa-bot-build
+        path: vasa-bot-${{ github.sha }}.tar.gz
+        retention-days: 30
+
+  deploy-staging:
+    needs: build
+    if: github.event.inputs.environment == 'staging' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    environment: staging
+    
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: vasa-bot-build
+    
+    - name: Deploy to staging
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        echo "This would deploy to your staging server"
+        # Add your staging deployment commands here
+        
+    - name: Health check
+      run: |
+        echo "🏥 Performing health check..."
+        # Add health check commands for staging
+        
+    - name: Notify deployment
+      run: |
+        echo "✅ Staging deployment completed successfully!"
+
+  deploy-production:
+    needs: build
+    if: github.event_name == 'release' || (github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    environment: production
+    
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: vasa-bot-build
+    
+    - name: Deploy to production
+      run: |
+        echo "🚀 Deploying to production environment..."
+        echo "This would deploy to your production server"
+        # Add your production deployment commands here
+        
+    - name: Health check
+      run: |
+        echo "🏥 Performing health check..."
+        # Add health check commands for production
+        
+    - name: Notify deployment
+      run: |
+        echo "✅ Production deployment completed successfully!"
+
+  post-deploy:
+    needs: [deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    runs-on: ubuntu-latest
+    name: Post-deployment Tasks
+    
+    steps:
+    - name: Update status badge
+      run: |
+        echo "📊 Updating deployment status..."
+        
+    - name: Clean up artifacts
+      run: |
+        echo "🧹 Cleaning up deployment artifacts..."

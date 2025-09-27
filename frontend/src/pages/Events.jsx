@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo, useCallback } from 'react'
 import { Calendar, Users, MapPin, Clock, Edit, Trash2, Plus, Eye } from 'lucide-react'
 import axios from 'axios'
 
-function Events() {
+const Events = memo(function Events() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -12,7 +12,7 @@ function Events() {
     fetchEvents()
   }, [filter])
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true)
       const upcomingParam = filter === 'upcoming' ? 'true' : 'false'
@@ -31,9 +31,9 @@ function Events() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filter])
 
-  const deleteEvent = async (eventId) => {
+  const deleteEvent = useCallback(async (eventId) => {
     if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
       return
     }
@@ -45,9 +45,9 @@ function Events() {
       console.error('Error deleting event:', err)
       alert('Failed to delete event')
     }
-  }
+  }, [fetchEvents])
 
-  const getStatusBadge = (event) => {
+  const getStatusBadge = useCallback((event) => {
     const eventDate = new Date(event.date_time)
     const now = new Date()
     
@@ -58,7 +58,7 @@ function Events() {
     } else {
       return <span className="badge badge-success">Upcoming</span>
     }
-  }
+  }, [])
 
   if (loading) {
     return (
@@ -87,16 +87,16 @@ function Events() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-            Events
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            Mission Events
           </h1>
           <p className="text-muted">
-            Manage Discord events and view RSVP data
+            Coordinate space missions and track crew assignments
           </p>
         </div>
         <button className="btn btn-primary">
           <Plus size={16} />
-          Create Event
+          Launch Mission
         </button>
       </div>
 
@@ -227,6 +227,6 @@ function Events() {
       )}
     </div>
   )
-}
+});
 
 export default Events

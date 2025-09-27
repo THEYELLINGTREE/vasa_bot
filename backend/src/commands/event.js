@@ -1,6 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import db from '../database/init.js';
 import { PermissionManager } from '../utils/permissions.js';
+import logger from '../utils/logger.js';
+import sanitizer from '../utils/sanitizer.js';
 
 export const data = new SlashCommandBuilder()
     .setName('event')
@@ -122,25 +124,33 @@ export async function handleEventCreationStart(interaction, guildId, channelId) 
 
 // Handle the modal submission for basic event info
 export async function handleEventBasicInfoSubmission(interaction, guildId, channelId) {
-    const title = interaction.fields.getTextInputValue('event_title');
-    const description = interaction.fields.getTextInputValue('event_description') || '';
+    const rawTitle = interaction.fields.getTextInputValue('event_title');
+    const rawDescription = interaction.fields.getTextInputValue('event_description') || '';
     const dateString = interaction.fields.getTextInputValue('event_date');
-    const location = interaction.fields.getTextInputValue('event_location') || '';
+    const rawLocation = interaction.fields.getTextInputValue('event_location') || '';
 
-    // Parse and validate date
-    let eventDate;
+    // Sanitize and validate input data
+    let sanitizedData;
     try {
-        eventDate = parseEventDate(dateString);
-        if (eventDate <= new Date()) {
-            await interaction.reply({
-                content: '❌ Event date must be in the future. Please try again.',
-                ephemeral: true
-            });
-            return;
-        }
+        sanitizedData = sanitizer.sanitizeEventData({
+            title: rawTitle,
+            description: rawDescription,
+            location: rawLocation,
+            date_time: parseEventDate(dateString)
+        }, {
+            userId: interaction.user.id,
+            guildId: guildId
+        });
     } catch (error) {
+        logger.discordError('Event data validation failed', interaction, {
+            error: error.message,
+            rawTitle: rawTitle,
+            rawDescription: rawDescription?.substring(0, 100),
+            action: 'event_validation_failed'
+        });
+        
         await interaction.reply({
-            content: '❌ Invalid date format. Please use YYYY-MM-DD HH:MM format or natural language like "tomorrow 8pm".',
+            content: `❌ ${error.message}`,
             ephemeral: true
         });
         return;
@@ -149,14 +159,22 @@ export async function handleEventBasicInfoSubmission(interaction, guildId, chann
     try {
         await interaction.deferReply({ ephemeral: true });
 
-        // Create the event in database
+        // Create the event in database with sanitized data
         const stmt = db.prepare(`
             INSERT INTO events (title, description, date_time, channel_id, guild_id, creator_id, location, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
         `);
 
         const result = await new Promise((resolve, reject) => {
-            stmt.run([title, description, eventDate.toISOString(), channelId, guildId, interaction.user.id, location], function(err) {
+            stmt.run([
+                sanitizedData.title, 
+                sanitizedData.description, 
+                sanitizedData.date_time.toISOString(), 
+                channelId, 
+                guildId, 
+                interaction.user.id, 
+                sanitizedData.location
+            ], function(err) {
                 if (err) reject(err);
                 else resolve({ id: this.lastID });
             });
@@ -165,10 +183,10 @@ export async function handleEventBasicInfoSubmission(interaction, guildId, chann
 
         // Create event embed with RSVP buttons
         const eventEmbed = await createEventEmbed(result.id, {
-            title,
-            description,
-            date_time: eventDate.toISOString(),
-            location,
+            title: sanitizedData.title,
+            description: sanitizedData.description,
+            date_time: sanitizedData.date_time.toISOString(),
+            location: sanitizedData.location,
             creator_id: interaction.user.id,
             guild_id: guildId
         }, interaction.client);
@@ -205,14 +223,28 @@ export async function handleEventBasicInfoSubmission(interaction, guildId, chann
             });
         }
 
+        // Log successful event creation
+        logger.info('Event created successfully', {
+            userId: interaction.user.id,
+            guildId: guildId,
+            eventId: result.id,
+            eventTitle: sanitizedData.title,
+            action: 'event_created'
+        });
+        
         // Send success message to user
         await interaction.editReply({
-            content: `✅ **Event created successfully!**\n\n🎯 **${title}**\n📅 <t:${Math.floor(eventDate.getTime() / 1000)}:F>\n📍 ${location || 'No location specified'}\n\n🔗 Your event has been posted in ${channel} with RSVP buttons!`,
+            content: `✅ **Event created successfully!**\n\n🎯 **${sanitizedData.title}**\n📅 <t:${Math.floor(sanitizedData.date_time.getTime() / 1000)}:F>\n📍 ${sanitizedData.location || 'No location specified'}\n\n🔗 Your event has been posted in ${channel} with RSVP buttons!`,
             ephemeral: true
         });
 
     } catch (error) {
-        console.error('Error creating event:', error);
+        logger.discordError('Error creating event', interaction, {
+            error: error.message,
+            stack: error.stack,
+            action: 'event_creation_error'
+        });
+        
         await interaction.editReply({
             content: '❌ Failed to create event. Please try again.',
             ephemeral: true

@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -12,8 +13,10 @@ import { initializeDatabase } from './database/init.js';
 import { SchedulerService } from './services/SchedulerService.js';
 import eventRoutes from './routes/events.js';
 import botRoutes from './routes/bot.js';
+import authRoutes, { authenticateToken } from './routes/auth.js';
 import { handleEventCreationStart, handleEventBasicInfoSubmission } from './commands/event.js';
 import { handleRSVPButton } from './commands/rsvp.js';
+import logger from './utils/logger.js';
 
 dotenv.config();
 
@@ -49,6 +52,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Initialize collections
 client.commands = new Collection();
@@ -61,26 +65,28 @@ const loadCommands = async () => {
     
     for (const file of commandFiles) {
         const filePath = join(commandsPath, file);
-        const command = await import(filePath);
+        // Convert Windows path to file:// URL for ESM import
+        const fileUrl = new URL(`file:///${filePath.replace(/\\/g, '/')}`);
+        const command = await import(fileUrl.href);
         if ('data' in command && 'execute' in command) {
             client.commands.set(command.data.name, command);
-            console.log(`✅ Loaded command: ${command.data.name}`);
+            logger.info(`Command loaded: ${command.data.name}`, { action: 'command_load', commandName: command.data.name });
         }
     }
 };
 
 // Discord event handlers
 client.once('ready', async () => {
-    console.log(`🤖 Bot is ready! Logged in as ${client.user.tag}`);
-    
-    // Initialize database
-    await initializeDatabase();
-    console.log('📊 Database initialized');
+    logger.info(`Bot is ready! Logged in as ${client.user.tag}`, { 
+        action: 'bot_ready',
+        botId: client.user.id,
+        botTag: client.user.tag
+    });
     
     // Start scheduler service
     const scheduler = new SchedulerService(client);
     scheduler.start();
-    console.log('⏰ Scheduler service started');
+    logger.info('Scheduler service started', { action: 'scheduler_start' });
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -88,9 +94,22 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.isChatInputCommand()) {
             const command = client.commands.get(interaction.commandName);
             if (!command) {
-                console.error(`No command matching ${interaction.commandName} was found.`);
+                logger.error('Command not found', {
+                    userId: interaction.user.id,
+                    guildId: interaction.guild?.id,
+                    commandName: interaction.commandName,
+                    action: 'command_not_found'
+                });
                 return;
             }
+            
+            logger.debug('Executing command', {
+                userId: interaction.user.id,
+                guildId: interaction.guild?.id,
+                commandName: interaction.commandName,
+                action: 'command_execute'
+            });
+            
             await command.execute(interaction);
         } else if (interaction.isButton()) {
             await handleButtonInteraction(interaction);
@@ -98,7 +117,11 @@ client.on('interactionCreate', async (interaction) => {
             await handleModalSubmission(interaction);
         }
     } catch (error) {
-        console.error('Error handling interaction:', error);
+        logger.discordError('Error handling interaction', interaction, { 
+            error: error.message,
+            stack: error.stack
+        });
+        
         const reply = { content: 'There was an error while processing this interaction!', ephemeral: true };
         
         if (interaction.replied || interaction.deferred) {
@@ -110,47 +133,90 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // API Routes
-app.use('/api/events', eventRoutes);
-app.use('/api/bot', botRoutes);
+app.use('/auth', authRoutes);
+app.use('/api/events', authenticateToken, eventRoutes);
+app.use('/api/bot', authenticateToken, botRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         timestamp: new Date().toISOString(),
-        bot_status: client.isReady() ? 'online' : 'offline'
+        bot_status: client.isReady() ? 'online' : 'offline',
+        mode: (!process.env.DISCORD_TOKEN || process.env.DISCORD_TOKEN === 'your_discord_bot_token_here') ? 'api-only' : 'full'
     });
 });
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-    console.error('API Error:', error);
+    logger.apiError('API Error', req, { 
+        error: error.message,
+        stack: error.stack 
+    });
     res.status(500).json({ error: 'Internal server error' });
 });
 
 // Start services
 const startServices = async () => {
     try {
+        // Initialize database first (independent of Discord)
+        await initializeDatabase();
+        logger.info('Database initialized', { action: 'database_init' });
+        
         // Load commands
         await loadCommands();
         
-        // Start Discord bot
-        await client.login(process.env.DISCORD_TOKEN);
+        // Check if Discord credentials are provided
+        if (!process.env.DISCORD_TOKEN || process.env.DISCORD_TOKEN === 'your_discord_bot_token_here') {
+            logger.warn('Discord bot token not configured. Bot will run in API-only mode.', {
+                action: 'api_only_mode'
+            });
+            logger.warn('To use Discord features, update DISCORD_TOKEN in backend/.env', {
+                action: 'configuration_warning'
+            });
+        } else {
+            // Start Discord bot
+            await client.login(process.env.DISCORD_TOKEN);
+        }
         
         // Start Express server
         app.listen(PORT, () => {
-            console.log(`🚀 API server running on http://localhost:${PORT}`);
+            logger.info(`API server running on http://localhost:${PORT}`, { 
+                action: 'server_start',
+                port: PORT
+            });
+            
+            if (!process.env.DISCORD_TOKEN || process.env.DISCORD_TOKEN === 'your_discord_bot_token_here') {
+                logger.info('Web interface available (Discord bot features disabled)', {
+                    action: 'api_only_ready'
+                });
+            } else {
+                logger.info('Discord bot and web interface ready', {
+                    action: 'full_service_ready'
+                });
+            }
         });
         
     } catch (error) {
-        console.error('Failed to start services:', error);
+        logger.error('Failed to start services', { 
+            error: error.message,
+            stack: error.stack,
+            action: 'startup_failure'
+        });
+        
+        if (error.message.includes('TOKEN_INVALID')) {
+            logger.error('Invalid Discord token. Please check your .env file.', {
+                action: 'invalid_token'
+            });
+        }
+        
         process.exit(1);
     }
 };
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {
-    console.log('🔄 Shutting down gracefully...');
+    logger.info('Shutting down gracefully...', { action: 'graceful_shutdown' });
     client.destroy();
     process.exit(0);
 });

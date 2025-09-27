@@ -12,7 +12,7 @@ jobs:
     name: Backend Tests
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -46,7 +46,7 @@ jobs:
     name: Frontend Tests
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -80,7 +80,7 @@ jobs:
     name: Security Audit
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -103,7 +103,7 @@ jobs:
     needs: [backend-test, frontend-test]
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Setup Node.js
       uses: actions/setup-node@v4

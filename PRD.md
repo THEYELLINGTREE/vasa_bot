@@ -15,12 +15,12 @@ Vasa Bot is a modular bot management platform with both backend and frontend com
 
 ### Planned Features
 
-**Birthday Reminders**: Notify users of upcoming birthdays.
-**User Role Management**: Assign and manage user roles and permissions.
-**Twitch Live Notifications**: Alert users when specified Twitch channels go live.
-**Social Media Post Notifications**: Notify users of new posts from selected social media accounts.
-**Dynamic Raid Detection/Response**: Detect and respond to raid events in real time.
-**Club Role Sign-Up & Event Notifications**: Allow users to sign up for existing "club" roles and receive notifications when events are coming up, scheduled, or starting. Current clubs:
+- **Birthday Reminders**: Notify users of upcoming birthdays.
+- **User Role Management**: Assign and manage user roles and permissions.
+- **Twitch Live Notifications**: Alert users when specified Twitch channels go live.
+- **Social Media Post Notifications**: Notify users of new posts from selected social media accounts.
+- **Dynamic Raid Detection/Response**: Detect and respond to raid events in real time.
+- **Club Role Sign-Up & Event Notifications**: Allow users to sign up for existing "club" roles and receive notifications when events are coming up, scheduled, or starting. Current clubs:
   - Movies (role id: 955258542137434112)
   - Gaming Gang (role id: 979225255560241172)
   - Karaoke Kings (role id: 1036886953636929536)

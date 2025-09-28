@@ -123,7 +123,6 @@ router.get('/discord/callback', async (req, res) => {
     } catch (error) {
         console.error('Discord OAuth error:', error);
         res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}?error=auth_failed`);
-host:5173'}?error=no_code`);
     }
 });
 

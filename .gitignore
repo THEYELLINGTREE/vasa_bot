@@ -127,11 +127,6 @@ $RECYCLE.BIN/
 *.sqlite
 *.sqlite3
 
-# Database directories
-data/
-database/
-db/
-
 # Bot specific files
 bot.db
 *.db-journal

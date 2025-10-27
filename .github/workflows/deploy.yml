@@ -52,7 +52,7 @@ jobs:
           --exclude=backend/.env
     
     - name: Upload build artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: vasa-bot-build
         path: vasa-bot-${{ github.sha }}.tar.gz
